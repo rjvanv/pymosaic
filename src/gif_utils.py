@@ -30,7 +30,7 @@ class GifProcessor:
     def _stitch_with_gifsicle(self, outfile=None):
         subprocess.run(
             [
-                "gifsicle",
+                utils.SETTINGS.gifsicle_command,
                 "-O2",
                 *sorted(self.frame_directory.glob("*")),
                 "--loop=0",
@@ -43,7 +43,14 @@ class GifProcessor:
 
     def _split_with_gifsicle(self):
         subprocess.run(
-            ["gifsicle", "--explode", "--unoptimize", str(self.filepath), "-o", f"{self.frame_directory}/frames"],
+            [
+                utils.SETTINGS.gifsicle_command,
+                "--explode",
+                "--unoptimize",
+                str(self.filepath),
+                "-o",
+                f"{self.frame_directory}/frames",
+            ],
             check=True,
         )
 

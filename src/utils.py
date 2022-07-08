@@ -126,6 +126,7 @@ SETTINGS = Settings(
         "MAX_WORKERS": 10,
         "EXECUTOR_CLASS": futures.ProcessPoolExecutor,
         "SHOW_COMMAND_TEMPLATE": "firefox {}",
+        "GIFSICLE_COMMAND": "gifsicle",
     }
 )
 
@@ -146,13 +147,14 @@ def _test_command(*cmds):
             stderr=subprocess.DEVNULL,
         )
         return True
-    except subprocess.SubprocessError:
+    except (subprocess.SubprocessError, FileNotFoundError):
         return False
 
 
 @SETTINGS.register(name="GIFSICLE_ENABLED")
 def is_gifsicle_enabled():
-    return _test_command("gifsicle", "--version")
+    command = SETTINGS.gifsicle_command
+    return _test_command(command, "--version")
 
 
 def rm_tree(fp):
@@ -182,7 +184,10 @@ class ProgressBar:
     console = attr.ib(default=sys.stdout)
     done = attr.ib(default=0, init=False)
     start_time = attr.ib(default=0, init=False)
-    spinner = attr.ib(default=None, converter=lambda x: None if x is None else itertools.cycle(x) if is_sized(x) else x)
+    spinner = attr.ib(
+        default=None,
+        converter=lambda x: None if x is None else itertools.cycle(x) if is_sized(x) else x,
+    )
 
     def __enter__(self, total=None):
         self.total = self.total if total is None else total
