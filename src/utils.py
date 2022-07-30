@@ -15,12 +15,28 @@ from PIL import Image
 LOGGER = logging.getLogger("photomosaic")
 
 
+class NoopContextManager:
+    def __init__(self, *_args, **_kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(*_args, **_kwargs):
+        pass
+
+    def __call__(*_args, **_kwargs):
+        pass
+
+
 def log_execution_time(f):
     @functools.wraps(f)
     def inner(*args, **kwargs):
         start = time.time()
         result = f(*args, **kwargs)
-        LOGGER.debug(f"{getattr(f, '__name__', 'function')} took {time.time()-start} to complete.")
+        LOGGER.debug(
+            f"{getattr(f, '__name__', 'function')} took {time.time()-start} to complete."
+        )
         return result
 
     return inner
@@ -46,7 +62,9 @@ def image_to_blocks(image, tile_size, ensure_tiles=True):
 
 def blocks_to_image(data, rows):
     data = np.asarray(data) if isinstance(data, list) else data
-    pix_map = np.concatenate([np.concatenate(row, axis=1) for row in np.split(data, rows)])
+    pix_map = np.concatenate(
+        [np.concatenate(row, axis=1) for row in np.split(data, rows)]
+    )
     return Image.fromarray(np.asarray(pix_map, dtype="uint8"))
 
 
@@ -80,7 +98,9 @@ def collapse(data, target_dimensions=1):
 
 def uncollapse_images(data, color_channels=None):
     tile_size = (data.shape[-1] / (color_channels or 1)) ** 0.5
-    target_shape = np.fromiter(filter(bool, (-1, tile_size, tile_size, color_channels)), dtype=int)
+    target_shape = np.fromiter(
+        filter(bool, (-1, tile_size, tile_size, color_channels)), dtype=int
+    )
     return data.reshape(*target_shape)
 
 
@@ -102,7 +122,11 @@ class Settings:
 
     def is_truthy(self, key):
         item = getattr(self, key)
-        return item.upper() in ["1", "Y", "YES", "TRUE"] if isinstance(item, str) else bool(item)
+        return (
+            item.upper() in ["1", "Y", "YES", "TRUE"]
+            if isinstance(item, str)
+            else bool(item)
+        )
 
     def __getattr__(self, item):
         key = item.upper()
@@ -122,7 +146,10 @@ class Settings:
 SETTINGS = Settings(
     defaults={
         "TILE_DIRECTORIES": pathlib.Path(__file__).parent.joinpath("tile_directories"),
-        "DEFAULT_TILE_DIRECTORY": pathlib.Path(__file__).parent.joinpath("tile_directories") / "letters",
+        "DEFAULT_TILE_DIRECTORY": pathlib.Path(__file__).parent.joinpath(
+            "tile_directories"
+        )
+        / "letters",
         "MAX_WORKERS": 10,
         "EXECUTOR_CLASS": futures.ProcessPoolExecutor,
         "SHOW_COMMAND_TEMPLATE": "firefox {}",
@@ -135,7 +162,11 @@ SETTINGS.register(int, loc="converters", name="MAX_WORKERS")
 
 @SETTINGS.register(loc="converters", name="GIFSICLE_ENABLED")
 def is_truthy(value):
-    return value.upper() in ["1", "TRUE", "Y", "YES"] if isinstance(value, str) else bool(value)
+    return (
+        value.upper() in ["1", "TRUE", "Y", "YES"]
+        if isinstance(value, str)
+        else bool(value)
+    )
 
 
 def _test_command(*cmds):
@@ -186,7 +217,11 @@ class ProgressBar:
     start_time = attr.ib(default=0, init=False)
     spinner = attr.ib(
         default=None,
-        converter=lambda x: None if x is None else itertools.cycle(x) if is_sized(x) else x,
+        converter=lambda x: None
+        if x is None
+        else itertools.cycle(x)
+        if is_sized(x)
+        else x,
     )
 
     def __enter__(self, total=None):
@@ -221,7 +256,9 @@ class ProgressBar:
 
     def __call__(self):
         self.done += 1
-        self.console.write(f"{self._format_progress()}{self._format_spinner()}{self._format_estimate()}\r")
+        self.console.write(
+            f"{self._format_progress()}{self._format_spinner()}{self._format_estimate()}\r"
+        )
         self.console.flush()
 
 
