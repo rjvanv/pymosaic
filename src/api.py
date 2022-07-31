@@ -13,24 +13,18 @@ DEFAULTS = {"mode": "L", "tile_size": 8}
 
 def iter_tile_directories(tile_directories=None):
     tile_directories = tile_directories or utils.SETTINGS.tile_directories
-    for directory in filter(
-        lambda x: x.is_dir(), pathlib.Path(tile_directories).iterdir()
-    ):
+    for directory in filter(lambda x: x.is_dir(), pathlib.Path(tile_directories).iterdir()):
         yield directory
 
 
 def get_default_tile_directory():
     for directory in iter_tile_directories():
         return directory
-    raise ValueError(
-        f"Please specify a tile_directory argument or export TILE_DIRECTORIES"
-    )
+    raise ValueError(f"Please specify a tile_directory argument or export TILE_DIRECTORIES")
 
 
 def make_default_outfile(filename):
-    return pathlib.Path(filename).parent.joinpath(
-        "mosaic-of-" + pathlib.Path(filename).name
-    )
+    return pathlib.Path(filename).parent.joinpath("mosaic-of-" + pathlib.Path(filename).name)
 
 
 def _convert_frame(filename, *args, **kwargs):
@@ -50,9 +44,7 @@ def image_to_mosaic(
     progress_bar = progress_class or utils.NoopContextManager
     with progress_bar(1) as bar:
         mosaic = photomosaic.Photomosaic.load(filename, **kwargs)
-        mosaic_tiles = tiles.Tiles.load(
-            tile_directory, **utils.without(kwargs, "scale", "outfile")
-        )
+        mosaic_tiles = tiles.Tiles.load(tile_directory, **utils.without(kwargs, "scale", "outfile"))
         mosaic = mosaic.transform(mosaic_tiles, cmp=cmp)
         if outfile:
             mosaic.save(outfile, format=file_format)
@@ -74,13 +66,9 @@ def gif_to_mosaic(
     mode = kwargs.get("mode", "L")
     max_colors = {"L": 2}.get(mode, 32) if max_colors is None else int(max_colors)
     mosaic_tiles = tiles.Tiles.load(tile_directory)
-    with gif_utils.GifProcessor(
-        filename, max_colors=max_colors, keep_frames=keep_frames
-    ) as gif:
+    with gif_utils.GifProcessor(filename, max_colors=max_colors, keep_frames=keep_frames) as gif:
         gif.split().map(
-            functools.partial(
-                _convert_frame, tile_directory=mosaic_tiles, cmp=cmp, **kwargs
-            ),
+            functools.partial(_convert_frame, tile_directory=mosaic_tiles, cmp=cmp, **kwargs),
             progress_bar=progress_class,
             max_workers=max_workers,
         )
@@ -112,7 +100,7 @@ def to_mosaic(
             **kwargs,
         )
     else:
-        result = image_to_mosaic(filename, tile_directory, cmp, **kwargs)
+        result = image_to_mosaic(filename, tile_directory, cmp, progress_class=progress_class, **kwargs)
     return result
 
 
